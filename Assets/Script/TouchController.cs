@@ -13,12 +13,24 @@ public enum SceneName
 
 public class TouchController : MonoBehaviour
 {
-    [SerializeField] SceneName sceneManager;
-    [SerializeField] TextMeshProUGUI txtTouchCount;
-    [SerializeField] GameObject square;
+
+    [Header("Stats")]
     [SerializeField] int count;
-    [SerializeField] Vector2 startTouchPos, endTouchPos;
+    [SerializeField] GameObject square;
+    [SerializeField] TextMeshProUGUI txtTouchCount;
+    [SerializeField] SceneName sceneManager;
+
+    [Header("Multi Tap")]
     [SerializeField] PathType pathType;
+    [SerializeField] Vector2 startTouchPos, endTouchPos;
+
+    [Header("Pinch To Zoom")]
+    [SerializeField] float previousDistance;
+    [SerializeField] Camera mainCamera;
+    private void Start()
+    {
+        mainCamera = Camera.main;
+    }
     private void Update()
     {
         if (sceneManager == SceneName.MULTITAPSCENE)
@@ -33,7 +45,25 @@ public class TouchController : MonoBehaviour
 
     private void PrinchToZoomScreen()
     {
-        throw new NotImplementedException();
+        if (Input.touchCount == 2)
+        {
+            float currentDistance = Vector2.Distance(Input.GetTouch(0).position, Input.GetTouch(1).position);
+
+            if (Input.GetTouch(0).phase == TouchPhase.Moved || Input.GetTouch(1).phase == TouchPhase.Moved)
+            {
+                if (previousDistance > 0)
+                {
+                    mainCamera.orthographicSize += (previousDistance - currentDistance) * 0.01f;
+                    mainCamera.orthographicSize = Mathf.Clamp(mainCamera.orthographicSize, 2, 10);
+                    txtTouchCount.text = $"{mainCamera.orthographicSize}";
+                }
+                previousDistance = currentDistance;
+            }
+        }
+        else
+        {
+            previousDistance = 0;
+        }
     }
 
     private void SwipeOnScreen()
@@ -77,6 +107,9 @@ public class TouchController : MonoBehaviour
                     square.transform.DOMoveY(square.transform.position.y - 1, .25f);
             }
         }
+
+        count++;
+        txtTouchCount.text = $"{count}";
     }
 
     private void StartMovingFlDOPath(Vector3 startPos, Vector3 endPos, PathType pathType)
